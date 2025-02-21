@@ -1,0 +1,44 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "CloudFormation template for EventBridge RuleDetectEC2Creation",
+  "Resources": {
+    "Ruled4e2ae0b": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Name": "DetectEC2Creation",
+        "EventPattern": "{\"source\":[\"aws.ec2\"],\"detail-type\":[\"AWS API Call via CloudTrail\"],\"detail\":{\"eventSource\":[\"ec2.amazonaws.com\"],\"eventName\":[\"RunInstances\"],\"userIdentity\":{\"sessionContext\":{\"sessionIssuer\":{\"userName\":[{\"anything-but\":[\"aws-batch\",\"AWSServiceRoleForBatch\"]}]}}}}}",
+        "State": "ENABLED",
+        "Description": "Notificación automática que se activa cuando se detecta la creación de nuevas instancias en AWS. Esta alerta permite monitorear y auditar la infraestructura en tiempo real, asegurando control y seguridad en los despliegues.",
+        "EventBusName": "default",
+        "Targets": [{
+          "Id": "Idb0f8b83f-269a-41d0-b44d-e2eaaa8691b1",
+          "Arn": {
+            "Fn::Sub": "arn:${AWS::Partition}:sns:${AWS::Region}:${AWS::AccountId}:utp-prd-notification-instance-creation-topic"
+          },
+          "InputTransformer": {
+            "InputPathsMap": {
+              "accountId": "$.account",
+              "arn": "$.detail.userIdentity.arn",
+              "availabilityZone": "$.detail.responseElements.instancesSet.items[0].placement.availabilityZone",
+              "eventTime": "$.detail.eventTime",
+              "imageId": "$.detail.responseElements.instancesSet.items[0].imageId",
+              "instanceId": "$.detail.responseElements.instancesSet.items[0].instanceId",
+              "instanceType": "$.detail.responseElements.instancesSet.items[0].instanceType",
+              "launchTime": "$.detail.responseElements.instancesSet.items[0].launchTime",
+              "principalId": "$.detail.userIdentity.principalId",
+              "privateIpAddress": "$.detail.responseElements.instancesSet.items[0].privateIpAddress",
+              "securityGroupId": "$.detail.responseElements.instancesSet.items[0].groupSet.items[0].groupId",
+              "securityGroupName": "$.detail.responseElements.instancesSet.items[0].groupSet.items[0].groupName",
+              "sourceIPAddress": "$.detail.sourceIPAddress",
+              "subnetId": "$.detail.responseElements.instancesSet.items[0].subnetId",
+              "userName": "$.detail.userIdentity.sessionContext.sessionIssuer.userName",
+              "vpcId": "$.detail.responseElements.instancesSet.items[0].vpcId"
+            },
+            "InputTemplate": "{\n  \"🚨🚨 event\": \"Creación de Instancia - EC2 🚨🚨\",\n  \"⚙️ accountId\": \"<accountId>\",\n  \"instanceDetails\": {\n    \"🆔 instanceId\": \"<instanceId>\",\n    \"📷 amiId\": \"<imageId>\",\n    \"⚙️ instanceType\": \"<instanceType>\",\n    \"⏳ launchTime\": \"<launchTime>\",\n    \"🚀 subnetId\": \"<subnetId>\",\n    \"🏢 vpcId\": \"<vpcId>\"\n  },\n  \"user\": {\n    \"📌 userName\": \"<userName>\",\n    \"👨‍💻 principalId\": \"<principalId>\",\n    \"⚡ arn\": \"<arn>\",\n    \"🌍 sourceIPAddress\": \"<sourceIPAddress>\"\n  },\n  \"📆 eventTime\": \"<eventTime>\"\n}"
+          }
+        }]
+      }
+    }
+  },
+  "Parameters": {}
+}
