@@ -1,0 +1,89 @@
+Metadata:
+  AWSToolsMetrics:
+    IaC_Generator: arn:aws:cloudformation:us-east-1:792654060327:generatedTemplate/72d1b066-ceb3-41ce-8e8a-3e26dd08e212
+Resources:
+  EventsRule00ruleDetectEC2Creation00FzT5x:
+    UpdateReplacePolicy: Retain
+    Type: AWS::Events::Rule
+    DeletionPolicy: Retain
+    Properties:
+      EventBusName: default
+      EventPattern:
+        detail-type:
+          - AWS API Call via CloudTrail
+        source:
+          - aws.ec2
+        detail:
+          eventSource:
+            - ec2.amazonaws.com
+          eventName:
+            - RunInstances
+          userIdentity:
+            sessionContext:
+              sessionIssuer:
+                userName:
+                  - anything-but:
+                      - aws-batch
+                      - AWSServiceRoleForBatch
+      Description: Notificacion automatica que se activa cuando se detecta la creacion
+        de nuevas instancias en AWS. Esta alerta permite monitorear y auditar la
+        infraestructura en tiempo real, asegurando control y seguridad en los
+        despliegues.
+      State: ENABLED
+      Targets:
+        - InputTransformer:
+            InputTemplate: |-
+              {
+                "🚨🚨 event": "Creación de Instancia - EC2 🚨🚨",
+                "⚙️ accountId": "<accountId>",
+                "instanceDetails": {
+                  "🆔 instanceId": "<instanceId>",
+                  "📷 amiId": "<imageId>",
+                  "⚙️ instanceType": "<instanceType>",
+                  "⏳ launchTime": "<launchTime>",
+                  "🚀 subnetId": "<subnetId>",
+                  "🏢 vpcId": "<vpcId>"
+                },
+                "user": {
+                  "📌 userName": "<userName>",
+                  "👨‍💻 principalId": "<principalId>",
+                  "⚡ arn": "<arn>",
+                  "🌍 sourceIPAddress": "<sourceIPAddress>"
+                },
+                "📆 eventTime": "<eventTime>"
+              }
+            InputPathsMap:
+              securityGroupName: $.detail.responseElements.instancesSet.items[0].groupSet.items[0].groupName
+              subnetId: $.detail.responseElements.instancesSet.items[0].subnetId
+              imageId: $.detail.responseElements.instancesSet.items[0].imageId
+              instanceType: $.detail.responseElements.instancesSet.items[0].instanceType
+              sourceIPAddress: $.detail.sourceIPAddress
+              principalId: $.detail.userIdentity.principalId
+              userName: $.detail.userIdentity.sessionContext.sessionIssuer.userName
+              availabilityZone: $.detail.responseElements.instancesSet.items[0].placement.availabilityZone
+              privateIpAddress: $.detail.responseElements.instancesSet.items[0].privateIpAddress
+              securityGroupId: $.detail.responseElements.instancesSet.items[0].groupSet.items[0].groupId
+              accountId: $.account
+              launchTime: $.detail.responseElements.instancesSet.items[0].launchTime
+              instanceId: $.detail.responseElements.instancesSet.items[0].instanceId
+              vpcId: $.detail.responseElements.instancesSet.items[0].vpcId
+              eventTime: $.detail.eventTime
+              arn: $.detail.userIdentity.arn
+          Arn: !Ref SNSTopic00utpdevnotificationinstancecreationtopic00UnzRx
+          Id: Id93a5a8a8-f56a-4fb4-85e5-1fb898c58d24
+      Id: DetectEC2Creation
+      Name: DetectEC2Creation
+  SNSTopic00utpdevnotificationinstancecreationtopic00UnzRx:
+    UpdateReplacePolicy: Retain
+    Type: AWS::SNS::Topic
+    DeletionPolicy: Retain
+    Properties:
+      TracingConfig: PassThrough
+      DisplayName: Alerta Creacion de EC2 - Alta
+      FifoTopic: false
+      Tags:
+        - Value: AOPE
+          Key: t.aplicacion
+        - Value: dev
+          Key: t.ambiente
+      TopicName: utp-dev-notification-instance-creation-topic
